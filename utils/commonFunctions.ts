@@ -5,10 +5,10 @@ export const readFile = async (filePath: string): Promise<any> => {
   return new Promise((resolve, reject) => {
 
     fs.readFile(filePath, (err, data) => {
+      
+      if(err) return reject("File not found");
 
-      if(err) reject("File not found");
-
-      resolve(data.toString());
+      return resolve(data.toString());
     });
 
   });

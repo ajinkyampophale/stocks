@@ -1,53 +1,19 @@
-import { StocksOutput } from "./interfaces/stocks";
-import { readStockAndTransactionFiles } from "./readFiles";
-import { orderType } from "./utils/constants";
+import express from "express";
+import { engine } from 'express-handlebars';
 
-const computeStockPrice = async (sku: string): Promise<StocksOutput> => {
+const app = express();
 
-  try {
-    
-    const { stocks, transactions } = await readStockAndTransactionFiles();
+app.engine('handlebars', engine());
+app.set('view engine', 'handlebars');
+app.set('views', './views');
 
-    let skuPrice = 0, foundSku = false;
+app.use('/', require("./routes/index"));
+app.use('/stock_price', require("./routes/computeStockPrice"));
 
-    // Finding Initial Stock Price
-    for(const individualStock of stocks){
 
-      if(individualStock?.sku === sku){
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`);
+});
 
-        if(individualStock?.stock < 0) throw new Error("Stock price cannot be negative");
-
-        foundSku = true;
-        skuPrice = individualStock?.stock || 0;
-        break;
-      }
-    }
-
-    // Finding All The Transactions
-    for(const transaction of transactions){
-
-      const {sku: transactionSku, type, qty} = transaction;
-
-      if(transactionSku === sku){
-
-        if(qty < 0) throw new Error("Quantity cannot be negative");
-
-        foundSku = true;
-        if(type === orderType.order) skuPrice += qty;
-        else if(type === orderType.refund) skuPrice -= qty;
-      }
-    }
-
-    if(skuPrice < 0) throw new Error("Invalid transactions found"); 
-    if(!foundSku) throw new Error("Sku not found");
-   
-    return { sku, qty: skuPrice };
-  } 
-  catch (error: any) {
-    throw new Error(error);
-  }
-}
-
-computeStockPrice("SXV420098/71/68")
-  .then((result) => console.log(result))
-  .catch((error) => console.log(error));
+export = app;
